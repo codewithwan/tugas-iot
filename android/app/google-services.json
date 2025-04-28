@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "128029706439",
+    "project_id": "esiot-ce5ed",
+    "storage_bucket": "esiot-ce5ed.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:128029706439:android:d7921042dfd8589616d6e2",
+        "android_client_info": {
+          "package_name": "com.example.iot_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsx2eI4TI9ptZaPyitC-4PClFFOw0T-F0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
