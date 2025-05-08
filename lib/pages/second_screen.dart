@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
-import '../services/patient_service.dart';
+// import '../services/patient_service.dart';
 import 'patient_dashboard.dart';
 
 class SecondScreen extends StatefulWidget {
@@ -15,7 +15,7 @@ class SecondScreen extends StatefulWidget {
 class _SecondScreenState extends State<SecondScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final PatientService _patientService = PatientService();
+  // final PatientService _patientService = PatientService();
   bool _isLoading = false;
   String _errorMessage = '';
   bool _isConnected = false;
@@ -64,29 +64,32 @@ class _SecondScreenState extends State<SecondScreen> {
     }
 
     if (_formKey.currentState!.validate()) {
+      final String patientName = _nameController.text.trim().toLowerCase();
+
+      // Validate if the name is either "pasien1" or "pasien2"
+      if (patientName != "pasien1" && patientName != "pasien2") {
+        setState(() {
+          _errorMessage = 'Pasien tidak terdaftar';
+        });
+        return;
+      }
+
       setState(() {
         _isLoading = true;
         _errorMessage = '';
       });
 
       try {
-        final String patientName = _nameController.text.trim();
-        final String patientId = patientName.replaceAll(' ', '_').toLowerCase();
+        final String patientId = patientName;
 
         // Get existing patient data if any
-        final existingPatient = await _patientService.getPatientById(patientId);
-        int totalHelp = 0;
+        // final existingPatient = await _patientService.getPatientById(patientId);
 
-        if (existingPatient != null) {
-          totalHelp = (existingPatient['total_help'] ?? 0) as int;
-        }
-
-        // Create or update patient
-        await _patientService.createOrUpdatePatient(
-          patientId: patientId,
-          name: patientName,
-          totalHelp: totalHelp,
-        );
+        // // Create or update patient
+        // await _patientService.createOrUpdatePatient(
+        //   patientId: patientId,
+        //   name: patientName,
+        // );
 
         if (mounted) {
           Navigator.pushReplacement(
@@ -169,7 +172,7 @@ class _SecondScreenState extends State<SecondScreen> {
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'Masukkan nama Anda untuk melanjutkan',
+                          'Masukkan nama pasien',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.black54,
@@ -189,7 +192,7 @@ class _SecondScreenState extends State<SecondScreen> {
                               color: Colors.grey[700],
                               fontSize: 16,
                             ),
-                            hintText: 'Masukkan nama Anda',
+                            hintText: 'Masukkan pasien1 atau pasien2',
                             hintStyle: TextStyle(
                               color: Colors.grey[400],
                               fontSize: 16,
@@ -221,6 +224,10 @@ class _SecondScreenState extends State<SecondScreen> {
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Nama tidak boleh kosong';
+                            }
+                            final name = value.trim().toLowerCase();
+                            if (name != "pasien1" && name != "pasien2") {
+                              return 'Hanya "pasien1" dan "pasien2" yang diperbolehkan';
                             }
                             return null;
                           },

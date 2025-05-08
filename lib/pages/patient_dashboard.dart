@@ -45,11 +45,27 @@ class _PatientDashboardState extends State<PatientDashboard> {
   }
 
   Future<void> _requestHelp() async {
-    await _patientService.requestHelp(
-      widget.patientId,
-      widget.name,
-      _totalHelp,
-    );
+    try {
+      await _patientService.requestHelp(
+        widget.patientId,
+        widget.name,
+        _totalHelp,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            margin: const EdgeInsets.all(10),
+          ),
+        );
+      }
+    }
   }
 
   @override

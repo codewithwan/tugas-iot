@@ -28,7 +28,101 @@ class _ThirdScreenState extends State<ThirdScreen> {
   }
 
   Future<void> _handleRequest(String patientId, bool isRequesting) async {
-    await _patientService.updateHelpStatus(patientId, isRequesting);
+    // Show confirmation dialog
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.amber,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Konfirmasi',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: const Text(
+              'Apakah Anda yakin ingin menandai permintaan bantuan ini sebagai selesai?',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+                height: 1.5,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              style: TextButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Batal',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber,
+                foregroundColor: Colors.black87,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              child: const Text(
+                'Ya, Tandai Selesai',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        );
+      },
+    );
+
+    if (confirm == true) {
+      await _patientService.updateHelpStatus(patientId, isRequesting);
+    }
   }
 
   Widget _buildChart() {

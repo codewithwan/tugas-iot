@@ -27,17 +27,43 @@ class PatientService {
   Future<void> createOrUpdatePatient({
     required String patientId,
     required String name,
-    int status = 0,
-    String message = '',
-    int totalHelp = 0,
+    int? status,
+    String? message,
+    int? totalHelp,
   }) async {
-    await _databaseRef.child('patients').child(patientId).update({
+    // Get existing patient data
+    final existingPatient = await getPatientById(patientId);
+
+    // Prepare update data
+    final Map<String, dynamic> updateData = {
       'name': name,
-      'status': status,
-      'message': message,
-      'total_help': totalHelp,
       'last_login': DateTime.now().toIso8601String(),
-    });
+    };
+
+    // Only update status and message if they are explicitly provided
+    // Otherwise, keep the existing values
+    if (status != null) {
+      updateData['status'] = status;
+    } else if (existingPatient == null) {
+      // Only set default status for new patients
+      updateData['status'] = 0;
+    }
+
+    if (message != null) {
+      updateData['message'] = message;
+    } else if (existingPatient == null) {
+      // Only set default message for new patients
+      updateData['message'] = '';
+    }
+
+    if (totalHelp != null) {
+      updateData['total_help'] = totalHelp;
+    } else if (existingPatient == null) {
+      // Only set default totalHelp for new patients
+      updateData['total_help'] = 0;
+    }
+
+    await _databaseRef.child('patients').child(patientId).update(updateData);
   }
 
   // Memperbarui status bantuan pasien
@@ -46,9 +72,11 @@ class PatientService {
     if (patient != null) {
       final int totalHelp = (patient['total_help'] ?? 0) as int;
       await _databaseRef.child('patients').child(patientId).update({
-        'status': isRequesting ? 0 : 1,
+        'status': isRequesting
+            ? 0
+            : 1, // When isRequesting is true, set status to 0 (complete)
         'message': isRequesting ? '' : '${patient['name']}\nMeminta Bantuan',
-        'total_help': isRequesting ? totalHelp : totalHelp,
+        'total_help': totalHelp,
       });
     }
   }
@@ -56,10 +84,18 @@ class PatientService {
   // Meminta bantuan
   Future<void> requestHelp(
       String patientId, String name, int currentTotalHelp) async {
+    // Check if there's already a pending request
+    final patient = await getPatientById(patientId);
+    if (patient != null && patient['status'] == 1) {
+      throw Exception(
+          'Anda masih memiliki permintaan bantuan yang belum ditangani');
+    }
+
     await _databaseRef.child('patients').child(patientId).update({
       'status': 1,
       'message': '$name\nMeminta Bantuan',
       'total_help': currentTotalHelp + 1,
+      'last_login': DateTime.now().toIso8601String(),
     });
   }
 }
