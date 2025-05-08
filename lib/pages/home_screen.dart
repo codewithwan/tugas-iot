@@ -184,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Nama: Muhammad Ridan',
+                        'Nama: Muhammad Ridwan',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey[800],

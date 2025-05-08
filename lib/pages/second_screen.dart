@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
+import '../services/patient_service.dart';
 import 'patient_dashboard.dart';
 
 class SecondScreen extends StatefulWidget {
@@ -14,10 +15,10 @@ class SecondScreen extends StatefulWidget {
 class _SecondScreenState extends State<SecondScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final PatientService _patientService = PatientService();
   bool _isLoading = false;
   String _errorMessage = '';
   bool _isConnected = false;
-  final DatabaseReference _databaseRef = FirebaseDatabase.instance.ref();
 
   @override
   void initState() {
@@ -27,7 +28,6 @@ class _SecondScreenState extends State<SecondScreen> {
 
   Future<void> _checkConnection() async {
     try {
-      // Check Firebase connection
       await Firebase.initializeApp();
       final connected = FirebaseDatabase.instance.ref(".info/connected");
       connected.onValue.listen((event) {
@@ -70,16 +70,23 @@ class _SecondScreenState extends State<SecondScreen> {
       });
 
       try {
-        // Generate a simple patient ID based on timestamp
-        final patientId = DateTime.now().millisecondsSinceEpoch.toString();
+        final String patientName = _nameController.text.trim();
+        final String patientId = patientName.replaceAll(' ', '_').toLowerCase();
 
-        // Create or update patient data in Realtime Database
-        await _databaseRef.child('patients').child(patientId).update({
-          'name': _nameController.text,
-          'status': 0,
-          'message': '',
-          'lastLogin': DateTime.now().toIso8601String(),
-        });
+        // Get existing patient data if any
+        final existingPatient = await _patientService.getPatientById(patientId);
+        int totalHelp = 0;
+
+        if (existingPatient != null) {
+          totalHelp = (existingPatient['total_help'] ?? 0) as int;
+        }
+
+        // Create or update patient
+        await _patientService.createOrUpdatePatient(
+          patientId: patientId,
+          name: patientName,
+          totalHelp: totalHelp,
+        );
 
         if (mounted) {
           Navigator.pushReplacement(
@@ -87,8 +94,8 @@ class _SecondScreenState extends State<SecondScreen> {
             MaterialPageRoute(
               builder: (context) => PatientDashboard(
                 patientId: patientId,
-                username: _nameController.text,
-                name: _nameController.text,
+                username: patientName,
+                name: patientName,
               ),
             ),
           );
@@ -172,9 +179,21 @@ class _SecondScreenState extends State<SecondScreen> {
                         TextFormField(
                           controller: _nameController,
                           enabled: _isConnected,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 16,
+                          ),
                           decoration: InputDecoration(
                             labelText: 'Nama Pasien',
+                            labelStyle: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 16,
+                            ),
                             hintText: 'Masukkan nama Anda',
+                            hintStyle: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 16,
+                            ),
                             prefixIcon: const Icon(Icons.person_outline),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),

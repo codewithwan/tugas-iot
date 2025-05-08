@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
+import '../services/patient_service.dart';
 
 class PatientDashboard extends StatefulWidget {
   final String patientId;
@@ -18,9 +18,11 @@ class PatientDashboard extends StatefulWidget {
 }
 
 class _PatientDashboardState extends State<PatientDashboard> {
-  final DatabaseReference _databaseRef = FirebaseDatabase.instance.ref();
+  final PatientService _patientService = PatientService();
   bool _isRequestingHelp = false;
   String _statusMessage = '';
+  int _totalHelp = 0;
+  String _lastLogin = '';
 
   @override
   void initState() {
@@ -29,26 +31,25 @@ class _PatientDashboardState extends State<PatientDashboard> {
   }
 
   void _setupDatabaseListener() {
-    _databaseRef
-        .child('patients')
-        .child(widget.patientId)
-        .onValue
-        .listen((event) {
-      if (event.snapshot.value != null) {
-        final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+    _patientService.getPatients().listen((patients) {
+      if (patients.containsKey(widget.patientId)) {
+        final patient = patients[widget.patientId];
         setState(() {
-          _isRequestingHelp = data['status'] == 1;
-          _statusMessage = data['message'] ?? '';
+          _isRequestingHelp = patient['status'] == 1;
+          _statusMessage = patient['message'] ?? '';
+          _totalHelp = (patient['total_help'] ?? 0) as int;
+          _lastLogin = patient['last_login'] ?? '';
         });
       }
     });
   }
 
   Future<void> _requestHelp() async {
-    await _databaseRef.child('patients').child(widget.patientId).update({
-      'status': 1,
-      'message': 'Pasien ${widget.patientId}\nMeminta Bantuan',
-    });
+    await _patientService.requestHelp(
+      widget.patientId,
+      widget.name,
+      _totalHelp,
+    );
   }
 
   @override
@@ -156,12 +157,39 @@ class _PatientDashboardState extends State<PatientDashboard> {
                               size: 20,
                             ),
                             const SizedBox(width: 12),
-                            Text(
-                              'ID Pasien: ${widget.patientId}',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w500,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'ID Pasien: ${widget.patientId}',
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.black87,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Total bantuan: $_totalHelp kali',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[700],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  if (_lastLogin.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Login terakhir: ${_formatLastLogin(_lastLogin)}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey[700],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
                           ],
@@ -265,5 +293,14 @@ class _PatientDashboardState extends State<PatientDashboard> {
         ),
       ),
     );
+  }
+
+  String _formatLastLogin(String isoString) {
+    try {
+      final dateTime = DateTime.parse(isoString);
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return isoString;
+    }
   }
 }
